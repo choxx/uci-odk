@@ -1,28 +1,28 @@
 version: "3"
 services:
-  db:
-    container_name: aggregate-db
-    image: postgres:9.6-alpine
-    ports:
-      - 5432:5432
-    env_file: .env
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_USER=${DB_USERNAME}
-      - POSTGRES_DB=${DB_SCHEMA}
-    volumes:
-      - ./initdb:/docker-entrypoint-initdb.d
-      - ./pgdata:/var/lib/postgresql/data
-
-  wait_for_db:
-    image: dadarek/wait-for-dependencies
-    depends_on:
-      - db
-    command: db:5432
+#  db:
+#    container_name: aggregate-db
+#    image: postgres:9.6-alpine
+#    ports:
+#      - 5432:5432
+#    env_file: .env
+#    environment:
+#      - POSTGRES_PASSWORD=${DB_PASSWORD}
+#      - POSTGRES_USER=${DB_USERNAME}
+#      - POSTGRES_DB=${DB_SCHEMA}
+#    volumes:
+#      - ./initdb:/docker-entrypoint-initdb.d
+#      - ./pgdata:/var/lib/postgresql/data
+#
+#  wait_for_db:
+#    image: dadarek/wait-for-dependencies
+#    depends_on:
+#      - db
+#    command: db:5432
 
   server:
-    depends_on:
-      - wait_for_db
+#    depends_on:
+#      - wait_for_db
     image: tomcat:alpine
     env_file: .env
     ports:
@@ -30,9 +30,9 @@ services:
     volumes:
       - ./webapps:/usr/local/tomcat/webapps
 
-  proxy:
-    build: ./proxy
-    restart: unless-stopped
-    ports:
-      - 80:80
-      - 443:443
+#  proxy:
+#    build: ./proxy
+#    restart: unless-stopped
+#    ports:
+#      - 80:80
+#      - 443:443

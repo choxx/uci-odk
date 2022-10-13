@@ -1,34 +1,38 @@
-node() {
-    properties([
-        parameters([
-            string(name: 'docker_repo', defaultValue: 'odk-service', description: 'Docker Image Name'),
-            string(name: 'docker_server', defaultValue: 'localhost:5000', description: 'Docker Registry URL'),
+node('build-slave') {
+    try {
+        String ANSI_GREEN = "\u001B[32m"
+        String ANSI_NORMAL = "\u001B[0m"
+        String ANSI_BOLD = "\u001B[1m"
+        String ANSI_RED = "\u001B[31m"
+        String ANSI_YELLOW = "\u001B[33m"
 
-        ])
-    ])
-    stage('Checkout') {
-            cleanWs()
-            checkout scm
-            commit_hash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-            env.commit_id = sh(script: 'echo ' + env.docker_repo + '_' + commit_hash + '_' + env.BRANCH_NAME, returnStdout: true).trim()
-            echo "${env.commit_id}"
-    }
+        ansiColor('xterm') {
+                stage('Checkout') {
+                    if (!env.hub_org) {
+                        println(ANSI_BOLD + ANSI_RED + "Uh Oh! Please set a Jenkins environment variable named hub_org with value as registery/sunbidrded" + ANSI_NORMAL)
+                        error 'Please resolve the errors and rerun..'
+                    } else
+                        println(ANSI_BOLD + ANSI_GREEN + "Found environment variable named hub_org with value as: " + hub_org + ANSI_NORMAL)
+                }
 
-    stage('docker-build') {
-            sh '''
-                # docker build -f <location-of-docker-file> -t <tag-of-docker-image> <context-for-docker-image>
-                docker build -f build/Dockerfile -t $docker_server/$docker_repo:$commit_id .
-                '''
-    }
+                cleanWs()
+                checkout scm
+                commit_hash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                build_tag = sh(script: "echo " + params.github_release_tag.split('/')[-1] + "_" + commit_hash + "_" + env.BUILD_NUMBER, returnStdout: true).trim()
+                echo "build_tag: " + build_tag
 
-    stage('docker-push') {
-        sh '''
-                docker push $docker_server/$docker_repo:$commit_id
-                '''
+                stage('DockerBuild') {
+                    sh('chmod 777 build/build.sh')
+                    sh("build/build.sh ${build_tag} ${"odk"} ${env.NODE_NAME} ${hub_org}")
+                }
+                stage('ArchiveArtifacts') {
+                    archiveArtifacts "metadata.json"
+                    currentBuild.description = "${build_tag}"
+                }
+        }
     }
-    stage('ArchiveArtifacts') {
-        sh("echo ${commit_id} > commit_id.txt")
-                archiveArtifacts 'commit_id.txt'
-                currentBuild.description = "${commit_id}"
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        throw err
     }
 }

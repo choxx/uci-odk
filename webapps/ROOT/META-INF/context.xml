@@ -1,4 +1,4 @@
-<Context useHttpOnly="false" sessionCookieName="SID">
+<Context useHttpOnly="false">
   <JarScanner>
     <JarScanFilter pluggabilitySkip="*" tldSkip="*" />
   </JarScanner>
